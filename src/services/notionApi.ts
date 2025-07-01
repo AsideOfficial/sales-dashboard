@@ -88,24 +88,24 @@ class NotionApiService {
     return pages.map(page => {
       const properties = page.properties;
       
-      // 새로운 필드 구조에 맞게 파싱
+      // 실제 API 응답 구조에 맞게 파싱
       const parsedData = {
         id: page.id,
-        status: this.extractSelectValue(properties, '상태') || this.extractSelectValue(properties, 'Status') || 'Unknown',
-        customerName: this.extractTextValue(properties, '의원명') || this.extractTextValue(properties, 'Customer Name') || this.extractTextValue(properties, 'Name') || this.extractTextValue(properties, 'Title') || 'Unknown',
-        department: this.extractTextValue(properties, '진료과목') || this.extractTextValue(properties, 'Department') || 'Unknown',
-        salesRep: this.extractTextValue(properties, '영업담당자') || this.extractTextValue(properties, 'Sales Rep') || 'Unknown',
-        district: this.extractTextValue(properties, '지역구') || this.extractTextValue(properties, 'District') || 'Unknown',
-        visitCount: this.extractSelectValue(properties, '방문차수') || this.extractSelectValue(properties, 'Visit Count') || 'Unknown',
-        firstVisitDate: this.extractDateValue(properties, '최초방문일자') || this.extractDateValue(properties, 'First Visit Date') || '',
-        lastVisitDate: this.extractDateValue(properties, '최종방문일자') || this.extractDateValue(properties, 'Last Visit Date') || '',
-        reaction: this.extractSelectValue(properties, '반응') || this.extractSelectValue(properties, 'Reaction') || 'Unknown',
-        salesStage: this.extractSelectValue(properties, '세일즈단계') || this.extractSelectValue(properties, 'Sales Stage') || 'Unknown',
-        notes: this.extractTextValue(properties, '특이사항') || this.extractTextValue(properties, 'Notes') || '',
-        fax: this.extractTextValue(properties, 'FAX') || this.extractTextValue(properties, 'Fax') || '',
-        phone: this.extractTextValue(properties, '전화번호') || this.extractTextValue(properties, 'Phone') || '',
-        email: this.extractTextValue(properties, '이메일') || this.extractTextValue(properties, 'Email') || '',
-        remarks: this.extractTextValue(properties, '비고') || this.extractTextValue(properties, 'Remarks') || '',
+        status: this.extractStatusValue(properties, '상태 1') || 'Unknown',
+        customerName: this.extractRichTextValue(properties, '의원명') || 'Unknown',
+        department: this.extractSelectValue(properties, '진료과목') || 'Unknown',
+        salesRep: this.extractSelectValue(properties, '영업 담당자') || 'Unknown',
+        district: this.extractSelectValue(properties, '지역구') || 'Unknown',
+        visitCount: this.extractSelectValue(properties, '방문차수') || 'Unknown',
+        firstVisitDate: this.extractDateValue(properties, '최초방문일자') || '',
+        lastVisitDate: this.extractDateValue(properties, '최종방문일자') || '',
+        reaction: this.extractSelectValue(properties, '반응') || 'Unknown',
+        salesStage: this.extractSelectValue(properties, '세일즈단계') || 'Unknown',
+        notes: this.extractRichTextValue(properties, '특이사항') || '',
+        fax: this.extractPhoneValue(properties, 'FAX') || '',
+        phone: this.extractPhoneValue(properties, '전화번호') || '',
+        email: this.extractEmailValue(properties, '이메일') || '',
+        remarks: this.extractTitleValue(properties, '비고') || '',
       };
       
       console.log('파싱된 데이터:', parsedData);
@@ -161,6 +161,49 @@ class NotionApiService {
   private findPropertyByType(properties: any, type: string): any {
     const props = this.findPropertiesByType(properties, type);
     return props.length > 0 ? props[0] : null;
+  }
+
+  private extractStatusValue(properties: any, propertyName: string): string | null {
+    const prop = properties[propertyName];
+    if (prop?.type === 'status' && prop.status?.name) {
+      return prop.status.name;
+    }
+    return null;
+  }
+
+  private extractRichTextValue(properties: any, propertyName: string): string | null {
+    const prop = properties[propertyName];
+    if (prop?.type === 'title' && prop.title?.[0]?.plain_text) {
+      return prop.title[0].plain_text;
+    }
+    if (prop?.type === 'rich_text' && prop.rich_text?.[0]?.plain_text) {
+      return prop.rich_text[0].plain_text;
+    }
+    return null;
+  }
+
+  private extractPhoneValue(properties: any, propertyName: string): string | null {
+    const prop = properties[propertyName];
+    if (prop?.type === 'phone_number' && prop.phone_number) {
+      return prop.phone_number;
+    }
+    return null;
+  }
+
+  private extractEmailValue(properties: any, propertyName: string): string | null {
+    const prop = properties[propertyName];
+    if (prop?.type === 'email' && prop.email) {
+      return prop.email;
+    }
+    return null;
+  }
+
+  private extractTitleValue(properties: any, propertyName: string): string | null {
+    const prop = properties[propertyName];
+    if (prop?.type === 'title' && prop.title?.[0]?.plain_text) {
+      return prop.title[0].plain_text;
+    }
+    return null;
   }
 }
 

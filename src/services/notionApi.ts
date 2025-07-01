@@ -68,6 +68,10 @@ class NotionApiService {
   }
 
   parseSalesData(pages: any[]): SalesData[] {
+    return this.parseSalesDataWithMapping(pages, {});
+  }
+
+  parseSalesDataWithMapping(pages: any[], mapping: Record<string, string>): SalesData[] {
     console.log('파싱할 페이지 데이터:', JSON.stringify(pages, null, 2));
     
     if (pages.length === 0) {
@@ -88,41 +92,59 @@ class NotionApiService {
     return pages.map(page => {
       const properties = page.properties;
       
-      // 속성 이름을 동적으로 찾기 (여러 개의 select 타입이 있을 수 있으므로)
-      const titleProps = this.findPropertiesByType(properties, 'title');
-      const selectProps = this.findPropertiesByType(properties, 'select');
-      const numberProps = this.findPropertiesByType(properties, 'number');
-      const dateProps = this.findPropertiesByType(properties, 'date');
-      
-      console.log('찾은 속성들:', {
-        title: titleProps,
-        select: selectProps,
-        number: numberProps,
-        date: dateProps
-      });
-      
-      // 첫 번째 title 속성을 고객명으로 사용
-      const customerProp = titleProps[0];
-      // 첫 번째 number 속성을 금액으로 사용
-      const amountProp = numberProps[0];
-      // 첫 번째 date 속성을 날짜로 사용
-      const dateProp = dateProps[0];
-      // select 속성들을 제품과 상태로 구분 (실제 데이터에 따라 조정 필요)
-      const productProp = selectProps[0];
-      const statusProp = selectProps[1] || selectProps[0];
-      
+      // 매핑이 있으면 매핑을 사용하고, 없으면 기본값 사용
       const parsedData = {
         id: page.id,
-        customer: customerProp?.title?.[0]?.plain_text || 'Unknown',
-        product: productProp?.select?.name || 'Unknown',
-        amount: amountProp?.number || 0,
-        date: dateProp?.date?.start || '',
-        status: statusProp?.select?.name || 'Pending',
+        customer: mapping.customer ? (this.extractTextValue(properties, mapping.customer) || 'Unknown') : 
+                 (this.extractTextValue(properties, 'Name') || this.extractTextValue(properties, 'Title') || 'Unknown'),
+        product: mapping.product ? (this.extractSelectValue(properties, mapping.product) || 'Unknown') : 
+                (this.extractSelectValue(properties, 'Category') || this.extractSelectValue(properties, 'Product') || 'Unknown'),
+        amount: mapping.amount ? (this.extractNumberValue(properties, mapping.amount) || 0) : 
+               (this.extractNumberValue(properties, 'Amount') || this.extractNumberValue(properties, 'Price') || 0),
+        date: mapping.date ? (this.extractDateValue(properties, mapping.date) || '') : 
+             (this.extractDateValue(properties, 'Date') || this.extractDateValue(properties, 'Created') || ''),
+        status: mapping.status ? (this.extractSelectValue(properties, mapping.status) || 'Pending') : 
+               (this.extractSelectValue(properties, 'Status') || this.extractSelectValue(properties, 'State') || 'Pending'),
       };
       
       console.log('파싱된 데이터:', parsedData);
       return parsedData;
     });
+  }
+
+  private extractTextValue(properties: any, propertyName: string): string | null {
+    const prop = properties[propertyName];
+    if (prop?.type === 'title' && prop.title?.[0]?.plain_text) {
+      return prop.title[0].plain_text;
+    }
+    if (prop?.type === 'rich_text' && prop.rich_text?.[0]?.plain_text) {
+      return prop.rich_text[0].plain_text;
+    }
+    return null;
+  }
+
+  private extractSelectValue(properties: any, propertyName: string): string | null {
+    const prop = properties[propertyName];
+    if (prop?.type === 'select' && prop.select?.name) {
+      return prop.select.name;
+    }
+    return null;
+  }
+
+  private extractNumberValue(properties: any, propertyName: string): number | null {
+    const prop = properties[propertyName];
+    if (prop?.type === 'number' && prop.number !== null) {
+      return prop.number;
+    }
+    return null;
+  }
+
+  private extractDateValue(properties: any, propertyName: string): string | null {
+    const prop = properties[propertyName];
+    if (prop?.type === 'date' && prop.date?.start) {
+      return prop.date.start;
+    }
+    return null;
   }
 
   private findPropertiesByType(properties: any, type: string): any[] {

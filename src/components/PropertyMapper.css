@@ -1,0 +1,88 @@
+.property-mapper-toggle {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+.property-mapper-toggle:hover {
+  background: #138496;
+}
+
+.property-mapper {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+
+.mapper-header {
+  background: #f8f9fa;
+  padding: 15px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mapper-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.mapper-header button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.mapper-content {
+  padding: 20px;
+}
+
+.mapping-section {
+  margin-bottom: 20px;
+}
+
+.mapping-section h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mapping-section select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.mapping-section select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.mapper-footer {
+  background: #f8f9fa;
+  padding: 15px 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.mapper-footer p {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  font-family: monospace;
+} 

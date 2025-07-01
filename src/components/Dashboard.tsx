@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import type { SalesData } from '../types/notion';
 import NotionApiService from '../services/notionApi';
 import DataDebugger from './DataDebugger';
+import PropertyMapper from './PropertyMapper';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -17,6 +18,8 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
   const [notionService, setNotionService] = useState<NotionApiService | null>(null);
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [showDebugger, setShowDebugger] = useState(false);
+  const [propertyMapping, setPropertyMapping] = useState<Record<string, string>>({});
+  const [firstPageProperties, setFirstPageProperties] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (apiKey && databaseId) {
@@ -26,12 +29,25 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
     }
   }, [apiKey, databaseId]);
 
+  useEffect(() => {
+    if (notionService && apiResponse && Object.keys(propertyMapping).length > 0) {
+      const parsedData = notionService.parseSalesDataWithMapping(apiResponse.results, propertyMapping);
+      setSalesData(parsedData);
+    }
+  }, [propertyMapping, notionService, apiResponse]);
+
   const fetchData = async (service: NotionApiService) => {
     try {
       setLoading(true);
       const response = await service.queryDatabase();
       setApiResponse(response);
-      const parsedData = service.parseSalesData(response.results);
+      
+      // 첫 번째 페이지의 속성을 저장
+      if (response.results.length > 0) {
+        setFirstPageProperties(response.results[0].properties);
+      }
+      
+      const parsedData = service.parseSalesDataWithMapping(response.results, propertyMapping);
       setSalesData(parsedData);
       setError(null);
     } catch (err) {
@@ -49,24 +65,49 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
   };
 
   // 차트 데이터 준비
-  const monthlyData = salesData.reduce((acc, sale) => {
-    const month = new Date(sale.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short' });
-    const existing = acc.find(item => item.month === month);
-    if (existing) {
-      existing.amount += sale.amount;
-      existing.count += 1;
-    } else {
-      acc.push({ month, amount: sale.amount, count: 1 });
-    }
-    return acc;
-  }, [] as { month: string; amount: number; count: number }[]);
+  const monthlyData = salesData
+    .filter(sale => sale.date) // 날짜가 있는 데이터만 필터링
+    .reduce((acc, sale) => {
+      try {
+        const month = new Date(sale.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short' });
+        const existing = acc.find(item => item.month === month);
+        if (existing) {
+          existing.amount += sale.amount;
+          existing.count += 1;
+        } else {
+          acc.push({ month, amount: sale.amount, count: 1 });
+        }
+      } catch (error) {
+        console.log('날짜 파싱 오류:', sale.date);
+      }
+      return acc;
+    }, [] as { month: string; amount: number; count: number }[])
+    .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
 
   const statusData = salesData.reduce((acc, sale) => {
-    acc[sale.status] = (acc[sale.status] || 0) + 1;
+    const status = sale.status || 'Unknown';
+    acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
   const pieData = Object.entries(statusData).map(([name, value]) => ({ name, value }));
+
+  // 제품별 데이터
+  const productData = salesData.reduce((acc, sale) => {
+    const product = sale.product || 'Unknown';
+    if (acc[product]) {
+      acc[product].amount += sale.amount;
+      acc[product].count += 1;
+    } else {
+      acc[product] = { amount: sale.amount, count: 1 };
+    }
+    return acc;
+  }, {} as Record<string, { amount: number; count: number }>);
+
+  const productChartData = Object.entries(productData)
+    .map(([name, data]) => ({ name, amount: data.amount, count: data.count }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 10); // 상위 10개만 표시
 
   const totalSales = salesData.reduce((sum, sale) => sum + sale.amount, 0);
   const totalOrders = salesData.length;
@@ -105,6 +146,11 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
           >
             {showDebugger ? '디버거 숨기기' : '데이터 디버거'}
           </button>
+          <PropertyMapper 
+            properties={firstPageProperties}
+            onMappingChange={setPropertyMapping}
+            currentMapping={propertyMapping}
+          />
         </div>
       </header>
 
@@ -159,6 +205,43 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="charts-grid">
+        <div className="chart-container">
+          <h3>제품별 매출</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={productChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+              <YAxis />
+              <Tooltip formatter={(value) => `₩${Number(value).toLocaleString()}`} />
+              <Bar dataKey="amount" fill="#82ca9d" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-container">
+          <h3>데이터 요약</h3>
+          <div className="data-summary">
+            <div className="summary-item">
+              <h4>총 데이터 수</h4>
+              <p>{salesData.length}개</p>
+            </div>
+            <div className="summary-item">
+              <h4>유효한 날짜</h4>
+              <p>{salesData.filter(sale => sale.date).length}개</p>
+            </div>
+            <div className="summary-item">
+              <h4>제품 종류</h4>
+              <p>{Object.keys(productData).length}개</p>
+            </div>
+            <div className="summary-item">
+              <h4>상태 종류</h4>
+              <p>{Object.keys(statusData).length}개</p>
+            </div>
+          </div>
         </div>
       </div>
 

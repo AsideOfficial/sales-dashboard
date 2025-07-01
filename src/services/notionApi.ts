@@ -11,25 +11,28 @@ class NotionApiService {
 
   async queryDatabase(): Promise<NotionQueryResponse> {
     try {
-      const response = await fetch(`/api/notion/v1/databases/${this.databaseId}/query`, {
+      console.log('API 요청 시작:', {
+        databaseId: this.databaseId,
+        apiKey: this.apiKey.substring(0, 10) + '...'
+      });
+
+      const response = await fetch(`http://localhost:3001/api/notion/databases/${this.databaseId}/query`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Notion-Version': '2022-06-28',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sorts: [
-            {
-              property: 'Date',
-              direction: 'descending',
-            },
-          ],
+          apiKey: this.apiKey,
+          // sorts를 제거하고 기본 쿼리만 시도
         }),
       });
 
+      console.log('API 응답 상태:', response.status, response.statusText);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API 오류 응답:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const data = await response.json();
@@ -46,16 +49,14 @@ class NotionApiService {
 
   async getDatabaseInfo() {
     try {
-      const response = await fetch(`/api/notion/v1/databases/${this.databaseId}`, {
+      const response = await fetch(`http://localhost:3001/api/notion/databases/${this.databaseId}?apiKey=${this.apiKey}`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Notion-Version': '2022-06-28',
-        },
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('데이터베이스 정보 조회 오류:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       return await response.json();

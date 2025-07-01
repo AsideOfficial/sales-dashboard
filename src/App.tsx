@@ -14,21 +14,12 @@ function App() {
     setIsConfigured(true)
   }
 
-  const handleReset = () => {
-    setApiKey('')
-    setDatabaseId('')
-    setIsConfigured(false)
-  }
-
   return (
     <div className="App">
       {!isConfigured ? (
         <ConfigForm onConfigSubmit={handleConfigSubmit} />
       ) : (
         <div className="dashboard-wrapper">
-          <button onClick={handleReset} className="reset-button">
-            설정 변경
-          </button>
           <Dashboard apiKey={apiKey} databaseId={databaseId} />
         </div>
       )}

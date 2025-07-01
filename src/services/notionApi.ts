@@ -98,18 +98,30 @@ class NotionApiService {
       const reaction = this.extractSelectValue(properties, '반응');
       const salesStage = this.extractSelectValue(properties, '세일즈단계');
       
+      // 디버깅을 위한 로그
+      console.log('추출된 값들:', {
+        status,
+        customerName,
+        department,
+        salesRep,
+        district,
+        visitCount,
+        reaction,
+        salesStage
+      });
+      
       const parsedData = {
         id: page.id,
-        status: status || '미정',
-        customerName: customerName || '이름 없음',
-        department: department || '미정',
-        salesRep: salesRep || '미정',
-        district: district || '미정',
-        visitCount: visitCount || '미정',
+        status: status && status !== '' ? status : '미정',
+        customerName: customerName && customerName !== '' ? customerName : '이름 없음',
+        department: department && department !== '' ? department : '미정',
+        salesRep: salesRep && salesRep !== '' ? salesRep : '미정',
+        district: district && district !== '' ? district : '미정',
+        visitCount: visitCount && visitCount !== '' ? visitCount : '미정',
         firstVisitDate: this.extractDateValue(properties, '최초방문일자') || '',
         lastVisitDate: this.extractDateValue(properties, '최종방문일자') || '',
-        reaction: reaction || '미정',
-        salesStage: salesStage || '미정',
+        reaction: reaction && reaction !== '' ? reaction : '미정',
+        salesStage: salesStage && salesStage !== '' ? salesStage : '미정',
         notes: this.extractRichTextValue(properties, '특이사항') || '',
         fax: this.extractPhoneValue(properties, 'FAX') || '',
         phone: this.extractPhoneValue(properties, '전화번호') || '',
@@ -117,7 +129,7 @@ class NotionApiService {
         remarks: this.extractTitleValue(properties, '비고') || '',
       };
       
-      console.log('파싱된 데이터:', parsedData);
+      console.log('최종 파싱된 데이터:', parsedData);
       return parsedData;
     });
   }
@@ -135,13 +147,17 @@ class NotionApiService {
 
   private extractSelectValue(properties: any, propertyName: string): string | null {
     const prop = properties[propertyName];
+    console.log(`extractSelectValue - ${propertyName}:`, prop);
     if (prop?.type === 'select' && prop.select?.name) {
+      console.log(`extractSelectValue - ${propertyName} 결과:`, prop.select.name);
       return prop.select.name;
     }
     // select 필드가 null인 경우 빈 문자열 반환
     if (prop?.type === 'select' && prop.select === null) {
+      console.log(`extractSelectValue - ${propertyName} null: 빈 문자열 반환`);
       return '';
     }
+    console.log(`extractSelectValue - ${propertyName} 실패: null 반환`);
     return null;
   }
 
@@ -178,24 +194,32 @@ class NotionApiService {
 
   private extractStatusValue(properties: any, propertyName: string): string | null {
     const prop = properties[propertyName];
+    console.log(`extractStatusValue - ${propertyName}:`, prop);
     if (prop?.type === 'status' && prop.status?.name) {
+      console.log(`extractStatusValue - ${propertyName} 결과:`, prop.status.name);
       return prop.status.name;
     }
     // status 필드가 null인 경우 빈 문자열 반환
     if (prop?.type === 'status' && prop.status === null) {
+      console.log(`extractStatusValue - ${propertyName} null: 빈 문자열 반환`);
       return '';
     }
+    console.log(`extractStatusValue - ${propertyName} 실패: null 반환`);
     return null;
   }
 
   private extractRichTextValue(properties: any, propertyName: string): string | null {
     const prop = properties[propertyName];
+    console.log(`extractRichTextValue - ${propertyName}:`, prop);
     if (prop?.type === 'title' && prop.title?.[0]?.plain_text) {
+      console.log(`extractRichTextValue - ${propertyName} title 결과:`, prop.title[0].plain_text);
       return prop.title[0].plain_text;
     }
     if (prop?.type === 'rich_text' && prop.rich_text?.[0]?.plain_text) {
+      console.log(`extractRichTextValue - ${propertyName} rich_text 결과:`, prop.rich_text[0].plain_text);
       return prop.rich_text[0].plain_text;
     }
+    console.log(`extractRichTextValue - ${propertyName} 실패: null 반환`);
     return null;
   }
 

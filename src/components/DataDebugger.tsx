@@ -50,22 +50,30 @@ const DataDebugger: React.FC<DataDebuggerProps> = ({ apiResponse, parsedData }) 
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>고객</th>
-                      <th>제품</th>
-                      <th>금액</th>
-                      <th>날짜</th>
+                      <th>의원명</th>
                       <th>상태</th>
+                      <th>진료과목</th>
+                      <th>영업담당자</th>
+                      <th>지역구</th>
+                      <th>방문차수</th>
+                      <th>최종방문일자</th>
+                      <th>반응</th>
+                      <th>세일즈단계</th>
                     </tr>
                   </thead>
                   <tbody>
                     {parsedData.map((item, index) => (
                       <tr key={index}>
                         <td>{item.id}</td>
-                        <td>{item.customer}</td>
-                        <td>{item.product}</td>
-                        <td>{item.amount}</td>
-                        <td>{item.date}</td>
+                        <td>{item.customerName}</td>
                         <td>{item.status}</td>
+                        <td>{item.department}</td>
+                        <td>{item.salesRep}</td>
+                        <td>{item.district}</td>
+                        <td>{item.visitCount}</td>
+                        <td>{item.lastVisitDate ? new Date(item.lastVisitDate).toLocaleDateString('ko-KR') : '-'}</td>
+                        <td>{item.reaction}</td>
+                        <td>{item.salesStage}</td>
                       </tr>
                     ))}
                   </tbody>

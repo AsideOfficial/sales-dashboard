@@ -10,8 +10,13 @@ export default defineConfig({
         target: 'https://api.notion.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/notion/, ''),
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; NotionAPI/1.0)',
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            // CORS 헤더 추가
+            proxyReq.setHeader('Access-Control-Allow-Origin', '*');
+            proxyReq.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            proxyReq.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+          });
         },
       },
     },

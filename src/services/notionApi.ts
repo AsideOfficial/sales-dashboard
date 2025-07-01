@@ -1,12 +1,11 @@
-import { Client } from '@notionhq/client';
 import type { NotionQueryResponse, SalesData } from '../types/notion';
 
 class NotionApiService {
-  private client: Client;
+  private apiKey: string;
   private databaseId: string;
 
   constructor(apiKey: string, databaseId: string) {
-    this.client = new Client({ auth: apiKey });
+    this.apiKey = apiKey;
     this.databaseId = databaseId;
   }
 
@@ -17,14 +16,28 @@ class NotionApiService {
         apiKey: '***' // 보안상 숨김
       });
 
-      const response = await this.client.databases.query({
-        database_id: this.databaseId,
+      const response = await fetch(`/api/notion/v1/databases/${this.databaseId}/query`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Notion-Version': '2022-06-28',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API 오류 응답:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const data = await response.json();
       
       // API 응답 디버깅을 위한 로그
-      console.log('노션 API 응답:', JSON.stringify(response, null, 2));
+      console.log('노션 API 응답:', JSON.stringify(data, null, 2));
       
-      return response as NotionQueryResponse;
+      return data as NotionQueryResponse;
     } catch (error) {
       console.error('노션 데이터베이스 쿼리 오류:', error);
       throw error;
@@ -33,11 +46,21 @@ class NotionApiService {
 
   async getDatabaseInfo() {
     try {
-      const response = await this.client.databases.retrieve({
-        database_id: this.databaseId,
+      const response = await fetch(`/api/notion/v1/databases/${this.databaseId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Notion-Version': '2022-06-28',
+        },
       });
 
-      return response;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('데이터베이스 정보 조회 오류:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      return await response.json();
     } catch (error) {
       console.error('노션 데이터베이스 정보 조회 오류:', error);
       throw error;

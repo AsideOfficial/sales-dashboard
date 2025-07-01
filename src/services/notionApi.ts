@@ -1,11 +1,12 @@
+import { Client } from '@notionhq/client';
 import type { NotionQueryResponse, SalesData } from '../types/notion';
 
 class NotionApiService {
-  private apiKey: string;
+  private client: Client;
   private databaseId: string;
 
   constructor(apiKey: string, databaseId: string) {
-    this.apiKey = apiKey;
+    this.client = new Client({ auth: apiKey });
     this.databaseId = databaseId;
   }
 
@@ -13,34 +14,17 @@ class NotionApiService {
     try {
       console.log('API 요청 시작:', {
         databaseId: this.databaseId,
-        apiKey: this.apiKey.substring(0, 10) + '...'
+        apiKey: '***' // 보안상 숨김
       });
 
-      const response = await fetch(`http://localhost:3001/api/notion/databases/${this.databaseId}/query`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiKey: this.apiKey,
-          // sorts를 제거하고 기본 쿼리만 시도
-        }),
+      const response = await this.client.databases.query({
+        database_id: this.databaseId,
       });
-
-      console.log('API 응답 상태:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API 오류 응답:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
-      const data = await response.json();
       
       // API 응답 디버깅을 위한 로그
-      console.log('노션 API 응답:', JSON.stringify(data, null, 2));
+      console.log('노션 API 응답:', JSON.stringify(response, null, 2));
       
-      return data as NotionQueryResponse;
+      return response as NotionQueryResponse;
     } catch (error) {
       console.error('노션 데이터베이스 쿼리 오류:', error);
       throw error;
@@ -49,17 +33,11 @@ class NotionApiService {
 
   async getDatabaseInfo() {
     try {
-      const response = await fetch(`http://localhost:3001/api/notion/databases/${this.databaseId}?apiKey=${this.apiKey}`, {
-        method: 'GET',
+      const response = await this.client.databases.retrieve({
+        database_id: this.databaseId,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('데이터베이스 정보 조회 오류:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
-      return await response.json();
+      return response;
     } catch (error) {
       console.error('노션 데이터베이스 정보 조회 오류:', error);
       throw error;

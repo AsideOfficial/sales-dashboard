@@ -89,18 +89,27 @@ class NotionApiService {
       const properties = page.properties;
       
       // 실제 API 응답 구조에 맞게 파싱
+      const status = this.extractStatusValue(properties, '상태 1');
+      const customerName = this.extractRichTextValue(properties, '의원명');
+      const department = this.extractSelectValue(properties, '진료과목');
+      const salesRep = this.extractSelectValue(properties, '영업 담당자');
+      const district = this.extractSelectValue(properties, '지역구');
+      const visitCount = this.extractSelectValue(properties, '방문차수');
+      const reaction = this.extractSelectValue(properties, '반응');
+      const salesStage = this.extractSelectValue(properties, '세일즈단계');
+      
       const parsedData = {
         id: page.id,
-        status: this.extractStatusValue(properties, '상태 1') || 'Unknown',
-        customerName: this.extractRichTextValue(properties, '의원명') || 'Unknown',
-        department: this.extractSelectValue(properties, '진료과목') || 'Unknown',
-        salesRep: this.extractSelectValue(properties, '영업 담당자') || 'Unknown',
-        district: this.extractSelectValue(properties, '지역구') || 'Unknown',
-        visitCount: this.extractSelectValue(properties, '방문차수') || 'Unknown',
+        status: status || '미정',
+        customerName: customerName || '이름 없음',
+        department: department || '미정',
+        salesRep: salesRep || '미정',
+        district: district || '미정',
+        visitCount: visitCount || '미정',
         firstVisitDate: this.extractDateValue(properties, '최초방문일자') || '',
         lastVisitDate: this.extractDateValue(properties, '최종방문일자') || '',
-        reaction: this.extractSelectValue(properties, '반응') || 'Unknown',
-        salesStage: this.extractSelectValue(properties, '세일즈단계') || 'Unknown',
+        reaction: reaction || '미정',
+        salesStage: salesStage || '미정',
         notes: this.extractRichTextValue(properties, '특이사항') || '',
         fax: this.extractPhoneValue(properties, 'FAX') || '',
         phone: this.extractPhoneValue(properties, '전화번호') || '',
@@ -128,6 +137,10 @@ class NotionApiService {
     const prop = properties[propertyName];
     if (prop?.type === 'select' && prop.select?.name) {
       return prop.select.name;
+    }
+    // select 필드가 null인 경우 빈 문자열 반환
+    if (prop?.type === 'select' && prop.select === null) {
+      return '';
     }
     return null;
   }
@@ -167,6 +180,10 @@ class NotionApiService {
     const prop = properties[propertyName];
     if (prop?.type === 'status' && prop.status?.name) {
       return prop.status.name;
+    }
+    // status 필드가 null인 경우 빈 문자열 반환
+    if (prop?.type === 'status' && prop.status === null) {
+      return '';
     }
     return null;
   }

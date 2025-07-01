@@ -88,17 +88,24 @@ class NotionApiService {
     return pages.map(page => {
       const properties = page.properties;
       
-      // 실제 데이터 구조에 맞게 파싱
+      // 새로운 필드 구조에 맞게 파싱
       const parsedData = {
         id: page.id,
-        customer: this.extractTextValue(properties, 'Name') || this.extractTextValue(properties, 'Title') || 'Unknown',
         status: this.extractSelectValue(properties, '상태') || this.extractSelectValue(properties, 'Status') || 'Unknown',
+        customerName: this.extractTextValue(properties, '의원명') || this.extractTextValue(properties, 'Customer Name') || this.extractTextValue(properties, 'Name') || this.extractTextValue(properties, 'Title') || 'Unknown',
+        department: this.extractTextValue(properties, '진료과목') || this.extractTextValue(properties, 'Department') || 'Unknown',
+        salesRep: this.extractTextValue(properties, '영업담당자') || this.extractTextValue(properties, 'Sales Rep') || 'Unknown',
+        district: this.extractTextValue(properties, '지역구') || this.extractTextValue(properties, 'District') || 'Unknown',
         visitCount: this.extractSelectValue(properties, '방문차수') || this.extractSelectValue(properties, 'Visit Count') || 'Unknown',
+        firstVisitDate: this.extractDateValue(properties, '최초방문일자') || this.extractDateValue(properties, 'First Visit Date') || '',
         lastVisitDate: this.extractDateValue(properties, '최종방문일자') || this.extractDateValue(properties, 'Last Visit Date') || '',
         reaction: this.extractSelectValue(properties, '반응') || this.extractSelectValue(properties, 'Reaction') || 'Unknown',
         salesStage: this.extractSelectValue(properties, '세일즈단계') || this.extractSelectValue(properties, 'Sales Stage') || 'Unknown',
-        amount: this.extractNumberValue(properties, 'Amount') || this.extractNumberValue(properties, 'Price') || 0,
-        date: this.extractDateValue(properties, 'Date') || this.extractDateValue(properties, 'Created') || '',
+        notes: this.extractTextValue(properties, '특이사항') || this.extractTextValue(properties, 'Notes') || '',
+        fax: this.extractTextValue(properties, 'FAX') || this.extractTextValue(properties, 'Fax') || '',
+        phone: this.extractTextValue(properties, '전화번호') || this.extractTextValue(properties, 'Phone') || '',
+        email: this.extractTextValue(properties, '이메일') || this.extractTextValue(properties, 'Email') || '',
+        remarks: this.extractTextValue(properties, '비고') || this.extractTextValue(properties, 'Remarks') || '',
       };
       
       console.log('파싱된 데이터:', parsedData);

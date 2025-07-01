@@ -49,25 +49,6 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
   };
 
   // 차트 데이터 준비
-  const monthlyData = salesData
-    .filter(sale => sale.date) // 날짜가 있는 데이터만 필터링
-    .reduce((acc, sale) => {
-      try {
-        const month = new Date(sale.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short' });
-        const existing = acc.find(item => item.month === month);
-        if (existing) {
-          existing.amount += sale.amount;
-          existing.count += 1;
-        } else {
-          acc.push({ month, amount: sale.amount, count: 1 });
-        }
-      } catch (error) {
-        console.log('날짜 파싱 오류:', sale.date);
-      }
-      return acc;
-    }, [] as { month: string; amount: number; count: number }[])
-    .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
-
   const statusData = salesData.reduce((acc, sale) => {
     const status = sale.status || 'Unknown';
     acc[status] = (acc[status] || 0) + 1;
@@ -189,20 +170,6 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
 
       <div className="charts-grid">
         <div className="chart-container">
-          <h3>월별 매출 추이</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => `₩${Number(value).toLocaleString()}`} />
-              <Legend />
-              <Line type="monotone" dataKey="amount" stroke="#8884d8" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="chart-container">
           <h3>주문 상태 분포</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -272,12 +239,12 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
           <h3>데이터 요약</h3>
           <div className="data-summary">
             <div className="summary-item">
-              <h4>총 데이터 수</h4>
+              <h4>총 고객 수</h4>
               <p>{salesData.length}개</p>
             </div>
             <div className="summary-item">
-              <h4>유효한 날짜</h4>
-              <p>{salesData.filter(sale => sale.date).length}개</p>
+              <h4>진료과목 수</h4>
+              <p>{new Set(salesData.map(sale => sale.department)).size}개</p>
             </div>
             <div className="summary-item">
               <h4>세일즈 단계</h4>
@@ -292,40 +259,46 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
       </div>
 
       <div className="recent-orders">
-        <h3>최근 주문</h3>
+        <h3>고객 데이터</h3>
         <div className="orders-table">
-                      <table>
-              <thead>
-                <tr>
-                  <th>고객</th>
-                  <th>상태</th>
-                  <th>방문차수</th>
-                  <th>최종방문일자</th>
-                  <th>반응</th>
-                  <th>세일즈단계</th>
+          <table>
+            <thead>
+              <tr>
+                <th>의원명</th>
+                <th>상태</th>
+                <th>진료과목</th>
+                <th>영업담당자</th>
+                <th>지역구</th>
+                <th>방문차수</th>
+                <th>최종방문일자</th>
+                <th>반응</th>
+                <th>세일즈단계</th>
+              </tr>
+            </thead>
+            <tbody>
+              {salesData.slice(0, 10).map((order) => (
+                <tr key={order.id}>
+                  <td>{order.customerName}</td>
+                  <td>
+                    <span className={`status-badge status-${order.status.toLowerCase()}`}>
+                      {order.status}
+                    </span>
+                  </td>
+                  <td>{order.department}</td>
+                  <td>{order.salesRep}</td>
+                  <td>{order.district}</td>
+                  <td>{order.visitCount}</td>
+                  <td>{order.lastVisitDate ? new Date(order.lastVisitDate).toLocaleDateString('ko-KR') : '-'}</td>
+                  <td>{order.reaction}</td>
+                  <td>
+                    <span className={`stage-badge stage-${order.salesStage.toLowerCase()}`}>
+                      {order.salesStage}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {salesData.slice(0, 10).map((order) => (
-                  <tr key={order.id}>
-                    <td>{order.customer}</td>
-                    <td>
-                      <span className={`status-badge status-${order.status.toLowerCase()}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td>{order.visitCount}</td>
-                    <td>{order.lastVisitDate ? new Date(order.lastVisitDate).toLocaleDateString('ko-KR') : '-'}</td>
-                    <td>{order.reaction}</td>
-                    <td>
-                      <span className={`stage-badge stage-${order.salesStage.toLowerCase()}`}>
-                        {order.salesStage}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

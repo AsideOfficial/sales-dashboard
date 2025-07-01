@@ -14,6 +14,11 @@
   border-bottom: 2px solid #f0f0f0;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
 .dashboard-header h1 {
   margin: 0;
   color: #333;
@@ -34,6 +39,21 @@
 
 .refresh-button:hover {
   background: #0056b3;
+}
+
+.debug-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.debug-button:hover {
+  background: #5a6268;
 }
 
 .stats-grid {

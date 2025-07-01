@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import type { SalesData } from '../types/notion';
 import NotionApiService from '../services/notionApi';
+import DataDebugger from './DataDebugger';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -14,6 +15,8 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notionService, setNotionService] = useState<NotionApiService | null>(null);
+  const [apiResponse, setApiResponse] = useState<any>(null);
+  const [showDebugger, setShowDebugger] = useState(false);
 
   useEffect(() => {
     if (apiKey && databaseId) {
@@ -27,6 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
     try {
       setLoading(true);
       const response = await service.queryDatabase();
+      setApiResponse(response);
       const parsedData = service.parseSalesData(response.results);
       setSalesData(parsedData);
       setError(null);
@@ -91,9 +95,17 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
     <div className="dashboard">
       <header className="dashboard-header">
         <h1>노션 판매 대시보드</h1>
-        <button onClick={refreshData} className="refresh-button">
-          새로고침
-        </button>
+        <div className="header-buttons">
+          <button onClick={refreshData} className="refresh-button">
+            새로고침
+          </button>
+          <button 
+            onClick={() => setShowDebugger(!showDebugger)} 
+            className="debug-button"
+          >
+            {showDebugger ? '디버거 숨기기' : '데이터 디버거'}
+          </button>
+        </div>
       </header>
 
       <div className="stats-grid">
@@ -181,6 +193,13 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
           </table>
         </div>
       </div>
+
+      {showDebugger && (
+        <DataDebugger 
+          apiResponse={apiResponse} 
+          parsedData={salesData} 
+        />
+      )}
     </div>
   );
 };

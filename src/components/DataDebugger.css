@@ -1,0 +1,103 @@
+.data-debugger {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+
+.debugger-header {
+  background: #f8f9fa;
+  padding: 15px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.debugger-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tab-buttons button {
+  background: none;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.tab-buttons button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.tab-buttons button:hover:not(.active) {
+  background: #f8f9fa;
+}
+
+.debugger-content {
+  padding: 20px;
+}
+
+.json-viewer h4,
+.parsed-data h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.json-viewer pre {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+}
+
+.data-table {
+  overflow-x: auto;
+}
+
+.data-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.data-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.data-table tr:hover {
+  background: #f8f9fa;
+}
+
+.parsed-data p {
+  color: #666;
+  font-style: italic;
+} 

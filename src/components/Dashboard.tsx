@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import type { SalesData } from '../types/notion';
 import NotionApiService from '../services/notionApi';
 import DataDebugger from './DataDebugger';
@@ -130,7 +130,7 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <h1>노션 판매 대시보드</h1>
+        <h1>다음진료 세일즈 현황판</h1>
         <div className="header-buttons">
           <button onClick={refreshData} className="refresh-button">
             새로고침
@@ -183,7 +183,7 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {pieData.map((entry, index) => (
+                {pieData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042'][index % 4]} />
                 ))}
               </Pie>

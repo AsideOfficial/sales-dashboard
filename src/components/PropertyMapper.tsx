@@ -19,7 +19,7 @@ const PropertyMapper: React.FC<PropertyMapperProps> = ({ properties, onMappingCh
   };
 
   const getAvailableProperties = (type: string) => {
-    return Object.entries(properties).filter(([key, value]) => 
+    return Object.entries(properties).filter(([, value]) => 
       propertyTypes[type as keyof typeof propertyTypes]?.includes(value?.type)
     );
   };

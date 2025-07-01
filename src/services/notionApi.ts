@@ -134,16 +134,7 @@ class NotionApiService {
     });
   }
 
-  private extractTextValue(properties: any, propertyName: string): string | null {
-    const prop = properties[propertyName];
-    if (prop?.type === 'title' && prop.title?.[0]?.plain_text) {
-      return prop.title[0].plain_text;
-    }
-    if (prop?.type === 'rich_text' && prop.rich_text?.[0]?.plain_text) {
-      return prop.rich_text[0].plain_text;
-    }
-    return null;
-  }
+
 
   private extractSelectValue(properties: any, propertyName: string): string | null {
     const prop = properties[propertyName];
@@ -161,13 +152,7 @@ class NotionApiService {
     return null;
   }
 
-  private extractNumberValue(properties: any, propertyName: string): number | null {
-    const prop = properties[propertyName];
-    if (prop?.type === 'number' && prop.number !== null) {
-      return prop.number;
-    }
-    return null;
-  }
+
 
   private extractDateValue(properties: any, propertyName: string): string | null {
     const prop = properties[propertyName];
@@ -177,20 +162,7 @@ class NotionApiService {
     return null;
   }
 
-  private findPropertiesByType(properties: any, type: string): any[] {
-    const foundProps: any[] = [];
-    for (const [key, value] of Object.entries(properties)) {
-      if (value && typeof value === 'object' && 'type' in value && (value as any).type === type) {
-        foundProps.push(value);
-      }
-    }
-    return foundProps;
-  }
 
-  private findPropertyByType(properties: any, type: string): any {
-    const props = this.findPropertiesByType(properties, type);
-    return props.length > 0 ? props[0] : null;
-  }
 
   private extractStatusValue(properties: any, propertyName: string): string | null {
     const prop = properties[propertyName];

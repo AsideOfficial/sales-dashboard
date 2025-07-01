@@ -208,6 +208,34 @@
   color: #004085;
 }
 
+.stage-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.stage-s {
+  background: #d4edda;
+  color: #155724;
+}
+
+.stage-a {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.stage-b {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.stage-c {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
 .dashboard-loading {
   display: flex;
   flex-direction: column;

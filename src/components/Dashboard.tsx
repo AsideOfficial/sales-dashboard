@@ -3,7 +3,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import type { SalesData } from '../types/notion';
 import NotionApiService from '../services/notionApi';
 import DataDebugger from './DataDebugger';
-import PropertyMapper from './PropertyMapper';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -18,8 +17,6 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
   const [notionService, setNotionService] = useState<NotionApiService | null>(null);
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [showDebugger, setShowDebugger] = useState(false);
-  const [propertyMapping, setPropertyMapping] = useState<Record<string, string>>({});
-  const [firstPageProperties, setFirstPageProperties] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (apiKey && databaseId) {
@@ -29,25 +26,12 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
     }
   }, [apiKey, databaseId]);
 
-  useEffect(() => {
-    if (notionService && apiResponse && Object.keys(propertyMapping).length > 0) {
-      const parsedData = notionService.parseSalesDataWithMapping(apiResponse.results, propertyMapping);
-      setSalesData(parsedData);
-    }
-  }, [propertyMapping, notionService, apiResponse]);
-
   const fetchData = async (service: NotionApiService) => {
     try {
       setLoading(true);
       const response = await service.queryDatabase();
       setApiResponse(response);
-      
-      // 첫 번째 페이지의 속성을 저장
-      if (response.results.length > 0) {
-        setFirstPageProperties(response.results[0].properties);
-      }
-      
-      const parsedData = service.parseSalesDataWithMapping(response.results, propertyMapping);
+      const parsedData = service.parseSalesData(response.results);
       setSalesData(parsedData);
       setError(null);
     } catch (err) {
@@ -92,26 +76,56 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
 
   const pieData = Object.entries(statusData).map(([name, value]) => ({ name, value }));
 
-  // 제품별 데이터
-  const productData = salesData.reduce((acc, sale) => {
-    const product = sale.product || 'Unknown';
-    if (acc[product]) {
-      acc[product].amount += sale.amount;
-      acc[product].count += 1;
+  // 세일즈 단계별 데이터
+  const salesStageData = salesData.reduce((acc, sale) => {
+    const stage = sale.salesStage || 'Unknown';
+    if (acc[stage]) {
+      acc[stage].count += 1;
     } else {
-      acc[product] = { amount: sale.amount, count: 1 };
+      acc[stage] = { count: 1 };
     }
     return acc;
-  }, {} as Record<string, { amount: number; count: number }>);
+  }, {} as Record<string, { count: number }>);
 
-  const productChartData = Object.entries(productData)
-    .map(([name, data]) => ({ name, amount: data.amount, count: data.count }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 10); // 상위 10개만 표시
+  const salesStageChartData = Object.entries(salesStageData)
+    .map(([name, data]) => ({ name, count: data.count }))
+    .sort((a, b) => b.count - a.count);
 
-  const totalSales = salesData.reduce((sum, sale) => sum + sale.amount, 0);
+  // 반응별 데이터
+  const reactionData = salesData.reduce((acc, sale) => {
+    const reaction = sale.reaction || 'Unknown';
+    if (acc[reaction]) {
+      acc[reaction].count += 1;
+    } else {
+      acc[reaction] = { count: 1 };
+    }
+    return acc;
+  }, {} as Record<string, { count: number }>);
+
+  const reactionChartData = Object.entries(reactionData)
+    .map(([name, data]) => ({ name, count: data.count }))
+    .sort((a, b) => b.count - a.count);
+
+  // 방문차수별 데이터
+  const visitCountData = salesData.reduce((acc, sale) => {
+    const visitCount = sale.visitCount || 'Unknown';
+    if (acc[visitCount]) {
+      acc[visitCount].count += 1;
+    } else {
+      acc[visitCount] = { count: 1 };
+    }
+    return acc;
+  }, {} as Record<string, { count: number }>);
+
+  const visitCountChartData = Object.entries(visitCountData)
+    .map(([name, data]) => ({ name, count: data.count }))
+    .sort((a, b) => {
+      const aNum = parseInt(a.name.replace(/[^0-9]/g, '')) || 0;
+      const bNum = parseInt(b.name.replace(/[^0-9]/g, '')) || 0;
+      return aNum - bNum;
+    });
+
   const totalOrders = salesData.length;
-  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
   if (loading) {
     return (
@@ -146,26 +160,30 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
           >
             {showDebugger ? '디버거 숨기기' : '데이터 디버거'}
           </button>
-          <PropertyMapper 
-            properties={firstPageProperties}
-            onMappingChange={setPropertyMapping}
-            currentMapping={propertyMapping}
-          />
         </div>
       </header>
 
       <div className="stats-grid">
         <div className="stat-card">
-          <h3>총 매출</h3>
-          <p className="stat-value">₩{totalSales.toLocaleString()}</p>
-        </div>
-        <div className="stat-card">
-          <h3>총 주문 수</h3>
+          <h3>총 고객 수</h3>
           <p className="stat-value">{totalOrders}</p>
         </div>
         <div className="stat-card">
-          <h3>평균 주문 금액</h3>
-          <p className="stat-value">₩{averageOrderValue.toLocaleString()}</p>
+          <h3>진행 중인 고객</h3>
+          <p className="stat-value">{salesData.filter(sale => sale.status === '진행 중').length}</p>
+        </div>
+        <div className="stat-card">
+          <h3>완료된 고객</h3>
+          <p className="stat-value">{salesData.filter(sale => sale.status === '완료').length}</p>
+        </div>
+        <div className="stat-card">
+          <h3>평균 방문차수</h3>
+          <p className="stat-value">
+            {(salesData.reduce((sum, sale) => {
+              const visitNum = parseInt(sale.visitCount.replace(/[^0-9]/g, '')) || 0;
+              return sum + visitNum;
+            }, 0) / salesData.length).toFixed(1)}
+          </p>
         </div>
       </div>
 
@@ -210,14 +228,42 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
 
       <div className="charts-grid">
         <div className="chart-container">
-          <h3>제품별 매출</h3>
+          <h3>세일즈 단계별 분포</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={productChartData}>
+            <BarChart data={salesStageChartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip formatter={(value) => `₩${Number(value).toLocaleString()}`} />
-              <Bar dataKey="amount" fill="#82ca9d" />
+              <Tooltip />
+              <Bar dataKey="count" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-container">
+          <h3>방문차수별 분포</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={visitCountChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="count" fill="#82ca9d" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="charts-grid">
+        <div className="chart-container">
+          <h3>반응별 분포</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={reactionChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="count" fill="#ffc658" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -234,12 +280,12 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
               <p>{salesData.filter(sale => sale.date).length}개</p>
             </div>
             <div className="summary-item">
-              <h4>제품 종류</h4>
-              <p>{Object.keys(productData).length}개</p>
+              <h4>세일즈 단계</h4>
+              <p>{Object.keys(salesStageData).length}개</p>
             </div>
             <div className="summary-item">
-              <h4>상태 종류</h4>
-              <p>{Object.keys(statusData).length}개</p>
+              <h4>반응 종류</h4>
+              <p>{Object.keys(reactionData).length}개</p>
             </div>
           </div>
         </div>
@@ -248,32 +294,38 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
       <div className="recent-orders">
         <h3>최근 주문</h3>
         <div className="orders-table">
-          <table>
-            <thead>
-              <tr>
-                <th>고객</th>
-                <th>제품</th>
-                <th>금액</th>
-                <th>날짜</th>
-                <th>상태</th>
-              </tr>
-            </thead>
-            <tbody>
-              {salesData.slice(0, 10).map((order) => (
-                <tr key={order.id}>
-                  <td>{order.customer}</td>
-                  <td>{order.product}</td>
-                  <td>₩{order.amount.toLocaleString()}</td>
-                  <td>{new Date(order.date).toLocaleDateString('ko-KR')}</td>
-                  <td>
-                    <span className={`status-badge status-${order.status.toLowerCase()}`}>
-                      {order.status}
-                    </span>
-                  </td>
+                      <table>
+              <thead>
+                <tr>
+                  <th>고객</th>
+                  <th>상태</th>
+                  <th>방문차수</th>
+                  <th>최종방문일자</th>
+                  <th>반응</th>
+                  <th>세일즈단계</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {salesData.slice(0, 10).map((order) => (
+                  <tr key={order.id}>
+                    <td>{order.customer}</td>
+                    <td>
+                      <span className={`status-badge status-${order.status.toLowerCase()}`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td>{order.visitCount}</td>
+                    <td>{order.lastVisitDate ? new Date(order.lastVisitDate).toLocaleDateString('ko-KR') : '-'}</td>
+                    <td>{order.reaction}</td>
+                    <td>
+                      <span className={`stage-badge stage-${order.salesStage.toLowerCase()}`}>
+                        {order.salesStage}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
         </div>
       </div>
 

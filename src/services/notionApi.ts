@@ -68,10 +68,6 @@ class NotionApiService {
   }
 
   parseSalesData(pages: any[]): SalesData[] {
-    return this.parseSalesDataWithMapping(pages, {});
-  }
-
-  parseSalesDataWithMapping(pages: any[], mapping: Record<string, string>): SalesData[] {
     console.log('파싱할 페이지 데이터:', JSON.stringify(pages, null, 2));
     
     if (pages.length === 0) {
@@ -92,19 +88,17 @@ class NotionApiService {
     return pages.map(page => {
       const properties = page.properties;
       
-      // 매핑이 있으면 매핑을 사용하고, 없으면 기본값 사용
+      // 실제 데이터 구조에 맞게 파싱
       const parsedData = {
         id: page.id,
-        customer: mapping.customer ? (this.extractTextValue(properties, mapping.customer) || 'Unknown') : 
-                 (this.extractTextValue(properties, 'Name') || this.extractTextValue(properties, 'Title') || 'Unknown'),
-        product: mapping.product ? (this.extractSelectValue(properties, mapping.product) || 'Unknown') : 
-                (this.extractSelectValue(properties, 'Category') || this.extractSelectValue(properties, 'Product') || 'Unknown'),
-        amount: mapping.amount ? (this.extractNumberValue(properties, mapping.amount) || 0) : 
-               (this.extractNumberValue(properties, 'Amount') || this.extractNumberValue(properties, 'Price') || 0),
-        date: mapping.date ? (this.extractDateValue(properties, mapping.date) || '') : 
-             (this.extractDateValue(properties, 'Date') || this.extractDateValue(properties, 'Created') || ''),
-        status: mapping.status ? (this.extractSelectValue(properties, mapping.status) || 'Pending') : 
-               (this.extractSelectValue(properties, 'Status') || this.extractSelectValue(properties, 'State') || 'Pending'),
+        customer: this.extractTextValue(properties, 'Name') || this.extractTextValue(properties, 'Title') || 'Unknown',
+        status: this.extractSelectValue(properties, '상태') || this.extractSelectValue(properties, 'Status') || 'Unknown',
+        visitCount: this.extractSelectValue(properties, '방문차수') || this.extractSelectValue(properties, 'Visit Count') || 'Unknown',
+        lastVisitDate: this.extractDateValue(properties, '최종방문일자') || this.extractDateValue(properties, 'Last Visit Date') || '',
+        reaction: this.extractSelectValue(properties, '반응') || this.extractSelectValue(properties, 'Reaction') || 'Unknown',
+        salesStage: this.extractSelectValue(properties, '세일즈단계') || this.extractSelectValue(properties, 'Sales Stage') || 'Unknown',
+        amount: this.extractNumberValue(properties, 'Amount') || this.extractNumberValue(properties, 'Price') || 0,
+        date: this.extractDateValue(properties, 'Date') || this.extractDateValue(properties, 'Created') || '',
       };
       
       console.log('파싱된 데이터:', parsedData);

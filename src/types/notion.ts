@@ -20,8 +20,11 @@ export interface NotionQueryResponse {
 export interface SalesData {
   id: string;
   customer: string;
-  product: string;
+  status: string;
+  visitCount: string;
+  lastVisitDate: string;
+  reaction: string;
+  salesStage: string;
   amount: number;
   date: string;
-  status: string;
 } 

@@ -16,28 +16,63 @@ class NotionApiService {
         apiKey: '***' // 보안상 숨김
       });
 
-      const response = await fetch(`/api/notion/v1/databases/${this.databaseId}/query`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Notion-Version': '2022-06-28',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      });
+      let allResults: any[] = [];
+      let hasMore = true;
+      let startCursor: string | undefined = undefined;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API 오류 응답:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      // 페이지네이션을 통해 모든 데이터를 가져옴
+      while (hasMore) {
+        const requestBody: any = {
+          page_size: 100, // 최대 페이지 크기
+        };
+
+        if (startCursor) {
+          requestBody.start_cursor = startCursor;
+        }
+
+        const response = await fetch(`/api/notion/v1/databases/${this.databaseId}/query`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Notion-Version': '2022-06-28',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API 오류 응답:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        const data = await response.json();
+        
+        // 결과를 누적
+        allResults = allResults.concat(data.results);
+        
+        // 다음 페이지가 있는지 확인
+        hasMore = data.has_more;
+        startCursor = data.next_cursor;
+        
+        console.log(`페이지 로드 완료: ${data.results.length}개 항목, 총 ${allResults.length}개 누적`);
+        
+        // API 호출 제한을 피하기 위해 잠시 대기
+        if (hasMore) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
-
-      const data = await response.json();
       
-      // API 응답 디버깅을 위한 로그
-      console.log('노션 API 응답:', JSON.stringify(data, null, 2));
+      // 전체 결과를 NotionQueryResponse 형태로 반환
+      const finalResponse: NotionQueryResponse = {
+        results: allResults,
+        has_more: false,
+      };
       
-      return data as NotionQueryResponse;
+      console.log(`전체 데이터 로드 완료: 총 ${allResults.length}개 항목`);
+      console.log('노션 API 응답:', JSON.stringify(finalResponse, null, 2));
+      
+      return finalResponse;
     } catch (error) {
       console.error('노션 데이터베이스 쿼리 오류:', error);
       throw error;

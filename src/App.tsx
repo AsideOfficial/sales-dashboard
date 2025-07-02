@@ -5,7 +5,7 @@ import './App.css'
 
 function App() {
   const [apiKey, setApiKey] = useState('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')
-  const [databaseId, setDatabaseId] = useState('2237166b6c1c8072b143f5d53ffb96f9')
+  const [databaseId, setDatabaseId] = useState('2247166b6c1c802089aaf44091b480e4')
   const [isConfigured, setIsConfigured] = useState(true)
 
   const handleConfigSubmit = (newApiKey: string, newDatabaseId: string) => {

@@ -13,6 +13,8 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('데이터를 불러오는 중...');
   const [error, setError] = useState<string | null>(null);
   const [notionService, setNotionService] = useState<NotionApiService | null>(null);
   const [apiResponse, setApiResponse] = useState<any>(null);
@@ -29,7 +31,19 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
   const fetchData = async (service: NotionApiService) => {
     try {
       setLoading(true);
-      const response = await service.queryDatabase();
+      setLoadingProgress(0);
+      setLoadingMessage('데이터를 불러오는 중...');
+      
+      const response = await service.queryDatabase(
+        (progress: number, message: string) => {
+          setLoadingProgress(progress);
+          setLoadingMessage(message);
+        }
+      );
+      
+      setLoadingMessage('데이터 파싱 중...');
+      setLoadingProgress(90);
+      
       setApiResponse(response);
       const parsedData = service.parseSalesData(response.results);
       setSalesData(parsedData);
@@ -39,6 +53,7 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
       console.error(err);
     } finally {
       setLoading(false);
+      setLoadingProgress(0);
     }
   };
 
@@ -112,7 +127,16 @@ const Dashboard: React.FC<DashboardProps> = ({ apiKey, databaseId }) => {
     return (
       <div className="dashboard-loading">
         <div className="loading-spinner"></div>
-        <p>데이터를 불러오는 중...</p>
+        <p>{loadingMessage}</p>
+        <div className="loading-progress">
+          <div className="progress-bar">
+            <div 
+              className="progress-fill" 
+              style={{ width: `${loadingProgress}%` }}
+            ></div>
+          </div>
+          <span className="progress-text">{loadingProgress}%</span>
+        </div>
       </div>
     );
   }

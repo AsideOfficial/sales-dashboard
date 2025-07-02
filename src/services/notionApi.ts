@@ -9,7 +9,7 @@ class NotionApiService {
     this.databaseId = databaseId;
   }
 
-  async queryDatabase(): Promise<NotionQueryResponse> {
+  async queryDatabase(onProgress?: (progress: number, message: string) => void): Promise<NotionQueryResponse> {
     try {
       console.log('API 요청 시작:', {
         databaseId: this.databaseId,
@@ -19,15 +19,23 @@ class NotionApiService {
       let allResults: any[] = [];
       let hasMore = true;
       let startCursor: string | undefined = undefined;
+      let pageCount = 0;
 
       // 페이지네이션을 통해 모든 데이터를 가져옴
       while (hasMore) {
+        pageCount++;
         const requestBody: any = {
           page_size: 100, // 최대 페이지 크기
         };
 
         if (startCursor) {
           requestBody.start_cursor = startCursor;
+        }
+
+        // 진행률 업데이트
+        if (onProgress) {
+          const progress = Math.min((pageCount - 1) * 20, 80); // 0-80% 범위
+          onProgress(progress, `${pageCount}번째 페이지 로딩 중...`);
         }
 
         const response = await fetch(`/api/notion/v1/databases/${this.databaseId}/query`, {
